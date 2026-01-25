@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Trading Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .input-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .results-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .results-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .scenario-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 5px solid;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .scenario-card.best-case {
+            border-left-color: #f1c40f;
+        }
+
+        .scenario-card.avg-case {
+            border-left-color: #27ae60;
+        }
+
+        .scenario-card.worst-case {
+            border-left-color: #e74c3c;
+        }
+
+        .scenario-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .scenario-card.best-case .scenario-title {
+            color: #f39c12;
+        }
+
+        .scenario-card.avg-case .scenario-title {
+            color: #27ae60;
+        }
+
+        .scenario-card.worst-case .scenario-title {
+            color: #e74c3c;
+        }
+
+        .scenario-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .chart-section {
+            grid-column: 1 / -1;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #e9ecef;
+            margin-top: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+
+        .chart-title {
+            color: #2c3e50;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .scenario-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Professional Trading Calculator</h1>
+            <p>Advanced compound trading simulation with risk analysis</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <h2>Trading Parameters</h2>
+                
+                <div class="mode-selector">
+                    <button class="mode-btn active" onclick="setMode('standard')">Standard</button>
+                    <button class="mode-btn" onclick="setMode('findMargin')">Find Best Margin</button>
+                </div>
+
+                <div id="standardInputs">
+                    <div class="input-group">
+                        <label for="totalCapital">Total Capital ($)</label>
+                        <input type="number" id="totalCapital" value="10000" min="100" step="100">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="marginPercent">Margin % per Trade</label>
+                        <input type="number" id="marginPercent" value="5" min="0.1" max="100" step="0.1">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="profitPercent">Average Profit % per Win</label>
+                        <input type="number" id="profitPercent" value="70" min="0.1" max="1000" step="0.1">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="lossPercent">Average Loss % per Loss</label>
+                        <input type="number" id="lossPercent" value="100" min="0.1" max="1000" step="0.1">
+                    </div>
+                </div>
+
+                <div id="findMarginInputs" style="display: none;">
+                    <div class="input-group">
+                        <label for="findMarginCapital">Total Capital ($)</label>
+                        <input type="number" id="findMarginCapital" value="10000" min="100" step="100">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="findMarginWinRate">Expected Win Rate (%)</label>
+                        <input type="number" id="findMarginWinRate" value="60" min="1" max="99" step="1">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="dailyTrades">Daily Trade Amount</label>
+                    <input type="number" id="dailyTrades" value="2" min="1" max="100" step="1">
+                </div>
+
+                <div class="input-group">
+                    <label for="tradingDays">Trading Days</label>
+                    <input type="number" id="tradingDays" value="30" min="1" max="365" step="1">
+                </div>
+
+                <div class="input-group">
+                    <label for="winRate">Win Rate (%)</label>
+                    <input type="number" id="winRate" value="60" min="1" max="99" step="1">
+                </div>
+
+                <button class="calculate-btn" onclick="calculate()">Calculate Trading Scenarios</button>
+            </div>
+
+            <div class="results-section">
+                <h2>Simulation Results</h2>
+                <div id="results">
+                    <div class="loading">Click "Calculate" to see results</div>
+                </div>
+            </div>
+
+            <div class="chart-section">
+                <div class="chart-title">Capital Growth Over Time</div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #f1c40f;"></div>
+                        <span>Best Case</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #27ae60;"></div>
+                        <span>Average Case</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #e74c3c;"></div>
+                        <span>Worst Case</span>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart = null;
+        let currentMode = 'standard';
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (mode === 'findMargin') {
+                document.getElementById('standardInputs').style.display = 'none';
+                document.getElementById('findMarginInputs').style.display = 'block';
+                document.getElementById('marginPercent').value = 5; // Default for finding best margin
+            } else {
+                document.getElementById('standardInputs').style.display = 'block';
+                document.getElementById('findMarginInputs').style.display = 'none';
+            }
+        }
+
+        function calculateTradeProfit(currentCapital, marginPercent, profitPercent, lossPercent, isWin) {
+            const positionSize = currentCapital * (marginPercent / 100);
+            if (isWin) {
+                return positionSize * (profitPercent / 100);
+            } else {
+                return -positionSize * (lossPercent / 100);
+            }
+        }
+
+        function simulateBestCase(params) {
+            let capital = params.totalCapital;
+            const totalTrades = params.dailyTradeAmount * params.tradingDays;
+            const capitalHistory = [capital];
+
+            for (let i = 0; i < totalTrades; i++) {
+                const profit = calculateTradeProfit(capital, params.marginPercent, params.avgProfitPercent, params.avgLossPercent, true);
+                capital += profit;
+                capitalHistory.push(capital);
+            }
+
+            return {
+                finalCapital: capital,
+                totalReturn: capital - params.totalCapital,
+                totalReturnPercent: ((capital - params.totalCapital) / params.totalCapital) * 100,
+                totalTrades: totalTrades,
+                wins: totalTrades,
+                losses: 0,
+                marginUsed: params.marginPercent,
+                capitalHistory: capitalHistory
+            };
+        }
+
+        function simulateWorstCase(params) {
+            let capital = params.totalCapital;
+            const totalTrades = params.dailyTradeAmount * params.tradingDays;
+            const capitalHistory = [capital];
+            let actualTrades = 0;
+
+            for (let i = 0; i < totalTrades; i++) {
+                const loss = calculateTradeProfit(capital, params.marginPercent, params.avgProfitPercent, params.avgLossPercent, false);
+                capital += loss;
+                capitalHistory.push(capital);
+                actualTrades++;
+
+                if (capital <= 0) {
+                    capital = 0;
+                    break;
+                }
+            }
+
+            return {
+                finalCapital: capital,
+                totalReturn: capital - params.totalCapital,
+                totalReturnPercent: ((capital - params.totalCapital) / params.totalCapital) * 100,
+                totalTrades: actualTrades,
+                wins: 0,
+                losses: actualTrades,
+                marginUsed: params.marginPercent,
+                capitalHistory: capitalHistory
+            };
+        }
+
+        function simulateAverageCase(params) {
+            let capital = params.totalCapital;
+            const totalTrades = params.dailyTradeAmount * params.tradingDays;
+            const capitalHistory = [capital];
+            let wins = 0, losses = 0;
+
+            for (let i = 0; i < totalTrades; i++) {
+                const isWin = (Math.random() < params.winRate);
+                const profitOrLoss = calculateTradeProfit(capital, params.marginPercent, params.avgProfitPercent, params.avgLossPercent, isWin);
+                capital += profitOrLoss;
+                capitalHistory.push(capital);
+
+                if (isWin) wins++;
+                else losses++;
+
+                if (capital <= 0) {
+                    capital = 0;
+                    break;
+                }
+            }
+
+            return {
+                finalCapital: capital,
+                totalReturn: capital - params.totalCapital,
+                totalReturnPercent: ((capital - params.totalCapital) / params.totalCapital) * 100,
+                totalTrades: wins + losses,
+                wins: wins,
+                losses: losses,
+                marginUsed: params.marginPercent,
+                capitalHistory: capitalHistory
+            };
+        }
+
+        function findBestMargin(params) {
+            const marginResults = [];
+            
+            for (let margin = 1; margin <= 50; margin += 1) {
+                const testParams = { ...params, marginPercent: margin };
+                const bestCase = simulateBestCase(testParams);
+                const avgCase = simulateAverageCase(testParams);
+                const worstCase = simulateWorstCase(testParams);
+                
+                marginResults.push({
+                    margin: margin,
+                    bestCase: bestCase,
+                    avgCase: avgCase,
+                    worstCase: worstCase
+                });
+            }
+
+            const bestAvg = marginResults.reduce((best, current) => 
+                current.avgCase.finalCapital > best.avgCase.finalCapital ? current : best
+            );
+
+            return { marginResults, bestMargin: bestAvg.margin };
+        }
+
+        function displayResults(bestCase, avgCase, worstCase, bestMargin = null) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = `
+                <div class="scenario-card best-case">
+                    <div class="scenario-title">🚀 BEST CASE (100% Win Rate)</div>
+                    <div class="scenario-stats">
+                        <div class="stat">
+                            <div class="stat-label">Final Capital</div>
+                            <div class="stat-value">$${bestCase.finalCapital.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Total Return</div>
+                            <div class="stat-value">${bestCase.totalReturnPercent.toFixed(2)}%</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Total Trades</div>
+                            <div class="stat-value">${bestCase.totalTrades}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Win/Loss</div>
+                            <div class="stat-value">${bestCase.wins}/${bestCase.losses}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scenario-card avg-case">
+                    <div class="scenario-title">📊 AVERAGE CASE (${params.winRate * 100}% Win Rate)</div>
+                    <div class="scenario-stats">
+                        <div class="stat">
+                            <div class="stat-label">Final Capital</div>
+                            <div class="stat-value">$${avgCase.finalCapital.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Total Return</div>
+                            <div class="stat-value">${avgCase.totalReturnPercent.toFixed(2)}%</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Total Trades</div>
+                            <div class="stat-value">${avgCase.totalTrades}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Win/Loss</div>
+                            <div class="stat-value">${avgCase.wins}/${avgCase.losses}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scenario-card worst-case">
+                    <div class="scenario-title">💥 WORST CASE (0% Win Rate)</div>
+                    <div class="scenario-stats">
+                        <div class="stat">
+                            <div class="stat-label">Final Capital</div>
+                            <div class="stat-value">$${worstCase.finalCapital.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Total Return</div>
+                            <div class="stat-value">${worstCase.totalReturnPercent.toFixed(2)}%</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Total Trades</div>
+                            <div class="stat-value">${worstCase.totalTrades}</div>
+                        </div>
+                        <div class="stat">
+               <div class="stat-label">Survival</div>
+                            <div class="stat-value">${worstCase.totalTrades}/${worstCase.totalTrades}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (bestMargin) {
+                html += `
+                    <div style="background: #e8f5e8; padding: 15px; border-radius: 10px; margin-top: 15px; border-left: 4px solid #27ae60;">
+                        <strong>💡 Recommendation:</strong> Optimal margin for your ${params.winRate * 100}% win rate is <strong>${bestMargin}%</strong>
+                    </div>
+                `;
+            }
+
+            resultsDiv.innerHTML = html;
+        }
+
+        function createChart(bestCase, avgCase, worstCase) {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            
+            if (chart) {
+                chart.destroy();
+            }
+
+            const labels = bestCase.capitalHistory.map((_, index) => `Day ${Math.floor(index / params.dailyTradeAmount) + 1}`);
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.filter((_, index) => index % Math.ceil(labels.length / 30) === 0),datasets: [
+                        {
+                            label: 'Best Case',
+                            data: bestCase.capitalHistory.filter((_, index) => index % Math.ceil(bestCase.capitalHistory.length / 30) === 0),
+                            borderColor: '#f1c40f',
+                            backgroundColor: 'rgba(241, 196, 15, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#f1c40f'
+                        },
+                        {
+                            label: 'Average Case',
+                            data: avgCase.capitalHistory.filter((_, index) => index % Math.ceil(avgCase.capitalHistory.length / 30) === 0),
+                            borderColor: '#27ae60',
+                            backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#27ae60'
+                        },
+                        {
+                            label: 'Worst Case',
+                            data: worstCase.capitalHistory.filter((_, index) => index % Math.ceil(worstCase.capitalHistory.length / 30) === 0),
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#e74c3c'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                            color: 'rgba(0,0,0,0.1)'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+
+        let params = {};
+
+        function calculate() {
+            // Get input values
+            if (currentMode === 'findMargin') {
+                params = {
+                    totalCapital: parseFloat(document.getElementById('findMarginCapital').value),
+                    marginPercent: 5, // Starting point
+                    avgProfitPercent: 70,
+                    avgLossPercent: 100,
+                    dailyTradeAmount: parseInt(document.getElementById('dailyTrades').value),
+                    tradingDays: parseInt(document.getElementById('tradingDays').value),
+                    winRate: parseFloat(document.getElementById('findMarginWinRate').value) / 100
+                };
+
+                const { marginResults, bestMargin } = findBestMargin(params);
+                
+                // Use the best margin for final calculation
+                params.marginPercent = bestMargin;
+                const bestCase = simulateBestCase(params);
+                const avgCase = simulateAverageCase(params);
+                const worstCase = simulateWorstCase(params);
+
+                displayResults(bestCase, avgCase, worstCase, bestMargin);
+                createChart(bestCase, avgCase, worstCase);
+            } else {
+                params = {
+                    totalCapital: 
+                    parseFloat(document.getElementById('totalCapital').value),
+                    marginPercent: parseFloat(document.getElementById('marginPercent').value),
+                    avgProfitPercent: parseFloat(document.getElementById('profitPercent').value),
+                    avgLossPercent: parseFloat(document.getElementById('lossPercent').value),
+                    dailyTradeAmount: parseInt(document.getElementById('dailyTrades').value),
+                    tradingDays: parseInt(document.getElementById('tradingDays').value),
+                    winRate: parseFloat(document.getElementById('winRate').value) / 100
+                };
+
+                const bestCase = simulateBestCase(params);
+                const avgCase = simulateAverageCase(params);
+                const worstCase = simulateWorstCase(params);
+
+                displayResults(bestCase, avgCase, worstCase);
+                createChart(bestCase, avgCase, worstCase);
+            }
+        }
+
+        // Auto-calculate on page load
+        window.addEventListener('load', function() {
+            calculate();
+        });
+    </script>
+</body>
+</html>
