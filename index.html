@@ -1,723 +1,1067 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Trading Calculator</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APEX Trading Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:      #0b0e14;
+      --surface: #111620;
+      --panel:   #161c28;
+      --border:  #1f2a3c;
+      --border2: #243044;
+      --accent:  #3b82f6;
+      --accent2: #60a5fa;
+      --gold:    #f59e0b;
+      --green:   #10b981;
+      --red:     #ef4444;
+      --orange:  #f97316;
+      --muted:   #4b5a72;
+      --text:    #e2e8f0;
+      --text2:   #94a3b8;
+      --mono:    'Space Mono', monospace;
+      --body:    'DM Sans', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 15px; }
+    body {
+      font-family: var(--body);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 20px 60px;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
+    /* ── HEADER ── */
+    .header { text-align: center; margin-bottom: 32px; }
+    .badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 2px;
+      padding: 3px 10px;
+      margin-bottom: 14px;
+    }
+    .header h1 {
+      font-family: var(--mono);
+      font-size: clamp(1.5rem, 4vw, 2.3rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .header h1 em { color: var(--accent); font-style: normal; }
+    .header p { color: var(--text2); font-size: 0.88rem; margin-top: 8px; font-weight: 300; }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
+    /* ── LAYOUT ── */
+    .grid {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 390px 1fr;
+      grid-template-rows: auto auto;
+      gap: 18px;
+    }
+    .col-left        { grid-column: 1; grid-row: 1 / 3; }
+    .col-right-top   { grid-column: 2; grid-row: 1; }
+    .col-right-bot   { grid-column: 2; grid-row: 2; }
+    @media (max-width: 960px) {
+      .grid { grid-template-columns: 1fr; }
+      .col-left, .col-right-top, .col-right-bot { grid-column: 1; grid-row: auto; }
+    }
 
-        .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
+    /* ── PANEL ── */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 22px;
+    }
+    .panel-title {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-title::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
 
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 300;
-        }
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      margin-bottom: 22px;
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px 8px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .tab.active { background: var(--accent); color: #fff; }
+    .tab:not(.active):hover { background: var(--border2); color: var(--text2); }
 
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
+    /* ── FORM ── */
+    .field { margin-bottom: 13px; }
+    .field label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.79rem;
+      font-weight: 500;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+    .field label .hint { font-size: 0.68rem; color: var(--muted); font-weight: 400; }
+    .iw { position: relative; display: flex; align-items: center; }
+    .iw .px, .iw .sx {
+      position: absolute;
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      color: var(--muted);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .iw .px { left: 11px; }
+    .iw .sx { right: 11px; }
+    .iw input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.86rem;
+      padding: 9px 30px;
+      transition: border-color 0.18s, box-shadow 0.18s;
+      -moz-appearance: textfield;
+    }
+    .iw input::-webkit-outer-spin-button,
+    .iw input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .iw input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59,130,246,0.13); }
+    .iw input.bad { border-color: var(--red); }
+    .ferr { font-size: 0.69rem; color: var(--red); margin-top: 4px; display: none; }
+    .ferr.on { display: block; }
+    .sep {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 18px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            padding: 30px;
-        }
+    /* ── RUN BUTTON ── */
+    .run-btn {
+      width: 100%;
+      margin-top: 20px;
+      padding: 13px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.18s, transform 0.12s;
+    }
+    .run-btn:hover { background: var(--accent2); }
+    .run-btn:active { transform: scale(0.98); }
+    .run-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        .input-section {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 15px;
-            border: 1px solid #e9ecef;
-        }
+    /* ── STANDARD RESULT CARDS ── */
+    .scards { display: flex; flex-direction: column; gap: 13px; }
+    .scard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid;
+      border-radius: 8px;
+      padding: 15px 17px;
+    }
+    .scard.best  { border-left-color: var(--gold); }
+    .scard.avg   { border-left-color: var(--green); }
+    .scard.worst { border-left-color: var(--red); }
+    .scard-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+    .scard-title { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.09em; text-transform: uppercase; }
+    .scard.best  .scard-title { color: var(--gold); }
+    .scard.avg   .scard-title { color: var(--green); }
+    .scard.worst .scard-title { color: var(--red); }
+    .scard-val { font-family: var(--mono); font-size: 1rem; font-weight: 700; }
+    .pos { color: var(--green); }
+    .neg { color: var(--red); }
+    .neu { color: var(--text2); }
+    .sg { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; }
+    .st { background: var(--panel); border: 1px solid var(--border); border-radius: 5px; padding: 8px 9px; }
+    .stl { font-size: 0.65rem; color: var(--muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .stv { font-family: var(--mono); font-size: 0.82rem; font-weight: 700; color: var(--text); }
 
-        .input-section h2 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-        }
+    /* ── COST ROW ── */
+    .crow {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.79rem;
+    }
+    .crow:last-child { border-bottom: none; }
+    .crow span:first-child { color: var(--text2); }
+    .crow span:last-child  { font-family: var(--mono); font-size: 0.77rem; }
 
-        .input-group {
-            margin-bottom: 20px;
-        }
+    /* ── INFO BOXES ── */
+    .box {
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-size: 0.8rem;
+      color: var(--text2);
+      margin-bottom: 10px;
+    }
+    .box.blue   { background: rgba(59,130,246,0.07);  border: 1px solid rgba(59,130,246,0.22); }
+    .box.green  { background: rgba(16,185,129,0.07);  border: 1px solid rgba(16,185,129,0.22); }
+    .box.orange { background: rgba(249,115,22,0.07);  border: 1px solid rgba(249,115,22,0.22); }
+    .box.red    { background: rgba(239,68,68,0.07);   border: 1px solid rgba(239,68,68,0.22); }
+    .box strong { color: var(--text); }
 
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #495057;
-        }
+    /* ── RISK ENGINE HERO ── */
+    .re-hero {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+    .re-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .re-label {
+      font-family: var(--mono);
+      font-size: 0.63rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .re-big { font-family: var(--mono); font-size: 3rem; font-weight: 700; color: var(--accent); line-height: 1; }
+    .re-big sup { font-size: 1.2rem; }
+    .re-sub { font-size: 0.72rem; color: var(--text2); margin-top: 4px; }
+    .re-cap { font-family: var(--mono); font-size: 1.45rem; font-weight: 700; color: var(--green); }
+    .re-6 { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
 
-        .input-group input, .input-group select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
+    .re-badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      padding: 4px 10px;
+      border-radius: 4px;
+      letter-spacing: 0.06em;
+      margin-top: 8px;
+    }
+    .re-badge.safe   { background: rgba(16,185,129,0.15); color: var(--green);  border: 1px solid rgba(16,185,129,0.3); }
+    .re-badge.aggr   { background: rgba(249,115,22,0.15);  color: var(--orange); border: 1px solid rgba(249,115,22,0.3); }
+    .re-badge.dngr   { background: rgba(239,68,68,0.15);   color: var(--red);    border: 1px solid rgba(239,68,68,0.3); }
 
-        .input-group input:focus, .input-group select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
+    .re-ranges {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 17px;
+      margin-bottom: 14px;
+    }
+    .re-ranges-title {
+      font-family: var(--mono);
+      font-size: 0.63rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
 
-        .mode-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
-        }
+    /* ── CHART AREA ── */
+    .chart-legend { display: flex; gap: 16px; margin-bottom: 13px; flex-wrap: wrap; min-height: 18px; }
+    .ldot { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text2); }
+    .ldot span { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .chart-wrap { position: relative; height: 280px; }
+    .sweep-section {
+      margin-top: 20px;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .sweep-title {
+      font-family: var(--mono);
+      font-size: 0.63rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .sweep-legend { display: flex; gap: 14px; margin-bottom: 8px; flex-wrap: wrap; }
+    .sweep-legend .li { display: flex; align-items: center; gap: 5px; font-size: 0.69rem; color: var(--text2); }
+    .sweep-legend .li span { width: 10px; height: 10px; border-radius: 2px; }
+    .sweep-wrap { position: relative; height: 140px; }
 
-        .mode-btn {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #667eea;
-            background: white;
-            color: #667eea;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
+    /* ── PLACEHOLDER ── */
+    .ph { text-align: center; padding: 52px 20px; color: var(--muted); font-size: 0.84rem; font-family: var(--mono); }
+    .ph .ico { font-size: 2.2rem; margin-bottom: 12px; opacity: 0.35; }
 
-        .mode-btn.active {
-            background: #667eea;
-            color: white;
-        }
+    /* ── FOOT ── */
+    .foot { max-width: 1300px; margin: 12px auto 0; font-size: 0.7rem; color: var(--muted); text-align: right; font-family: var(--mono); }
 
-        .calculate-btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-
-        .calculate-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .results-section {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 15px;
-            border: 1px solid #e9ecef;
-        }
-
-        .results-section h2 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-        }
-
-        .scenario-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            border-left: 5px solid;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        .scenario-card.best-case {
-            border-left-color: #f1c40f;
-        }
-
-        .scenario-card.avg-case {
-            border-left-color: #27ae60;
-        }
-
-        .scenario-card.worst-case {
-            border-left-color: #e74c3c;
-        }
-
-        .scenario-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-        }
-
-        .scenario-card.best-case .scenario-title {
-            color: #f39c12;
-        }
-
-        .scenario-card.avg-case .scenario-title {
-            color: #27ae60;
-        }
-
-        .scenario-card.worst-case .scenario-title {
-            color: #e74c3c;
-        }
-
-        .scenario-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .stat {
-            text-align: center;
-            padding: 8px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            color: #6c757d;
-            margin-bottom: 5px;
-        }
-
-        .stat-value {
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        .chart-section {
-            grid-column: 1 / -1;
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            border: 1px solid #e9ecef;
-            margin-top: 20px;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 400px;
-            margin-top: 20px;
-        }
-
-        .chart-title {
-            color: #2c3e50;
-            font-size: 1.3rem;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .legend {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-bottom: 20px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legend-color {
-            width: 20px;
-            height: 3px;
-            border-radius: 2px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #6c757d;
-        }
-
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .scenario-stats {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Professional Trading Calculator</h1>
-            <p>Advanced compound trading simulation with risk analysis</p>
-        </div>
 
-        <div class="main-content">
-            <div class="input-section">
-                <h2>Trading Parameters</h2>
-                
-                <div class="mode-selector">
-                    <button class="mode-btn active" onclick="setMode('standard')">Standard</button>
-                    <button class="mode-btn" onclick="setMode('findMargin')">Find Best Margin</button>
-                </div>
+<div class="header">
+  <div class="badge">v3.0 — Risk Engine</div>
+  <h1>APEX <em>Trading</em> Calculator</h1>
+  <p>Compound simulation · Risk Engine · Slippage &amp; Fee modeling</p>
+</div>
 
-                <div id="standardInputs">
-                    <div class="input-group">
-                        <label for="totalCapital">Total Capital ($)</label>
-                        <input type="number" id="totalCapital" value="10000" min="100" step="100">
-                    </div>
+<div class="grid">
 
-                    <div class="input-group">
-                        <label for="marginPercent">Margin % per Trade</label>
-                        <input type="number" id="marginPercent" value="5" min="0.1" max="100" step="0.1">
-                    </div>
+  <!-- ════ LEFT — INPUTS ════ -->
+  <div class="col-left panel">
+    <div class="panel-title" id="inputTitle">Parameters</div>
 
-                    <div class="input-group">
-                        <label for="profitPercent">Average Profit % per Win</label>
-                        <input type="number" id="profitPercent" value="70" min="0.1" max="1000" step="0.1">
-                    </div>
-
-                    <div class="input-group">
-                        <label for="lossPercent">Average Loss % per Loss</label>
-                        <input type="number" id="lossPercent" value="100" min="0.1" max="1000" step="0.1">
-                    </div>
-                </div>
-
-                <div id="findMarginInputs" style="display: none;">
-                    <div class="input-group">
-                        <label for="findMarginCapital">Total Capital ($)</label>
-                        <input type="number" id="findMarginCapital" value="10000" min="100" step="100">
-                    </div>
-
-                    <div class="input-group">
-                        <label for="findMarginWinRate">Expected Win Rate (%)</label>
-                        <input type="number" id="findMarginWinRate" value="60" min="1" max="99" step="1">
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label for="dailyTrades">Daily Trade Amount</label>
-                    <input type="number" id="dailyTrades" value="2" min="1" max="100" step="1">
-                </div>
-
-                <div class="input-group">
-                    <label for="tradingDays">Trading Days</label>
-                    <input type="number" id="tradingDays" value="30" min="1" max="365" step="1">
-                </div>
-
-                <div class="input-group">
-                    <label for="winRate">Win Rate (%)</label>
-                    <input type="number" id="winRate" value="60" min="1" max="99" step="1">
-                </div>
-
-                <button class="calculate-btn" onclick="calculate()">Calculate Trading Scenarios</button>
-            </div>
-
-            <div class="results-section">
-                <h2>Simulation Results</h2>
-                <div id="results">
-                    <div class="loading">Click "Calculate" to see results</div>
-                </div>
-            </div>
-
-            <div class="chart-section">
-                <div class="chart-title">Capital Growth Over Time</div>
-                <div class="legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #f1c40f;"></div>
-                        <span>Best Case</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #27ae60;"></div>
-                        <span>Average Case</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #e74c3c;"></div>
-                        <span>Worst Case</span>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <canvas id="growthChart"></canvas>
-                </div>
-            </div>
-        </div>
+    <div class="tabs">
+      <button class="tab active" id="tabStd" onclick="setMode('standard',this)">Standard</button>
+      <button class="tab"        id="tabRE"  onclick="setMode('riskEngine',this)">Risk Engine</button>
     </div>
 
-    <script>
-        let chart = null;
-        let currentMode = 'standard';
+    <!-- ── STANDARD ── -->
+    <div id="stdBlock">
+      <div class="field">
+        <label>Starting Capital</label>
+        <div class="iw"><span class="px">$</span>
+          <input type="number" id="s_cap" value="10000" min="1" step="100">
+        </div>
+        <div class="ferr" id="e_s_cap">Must be &gt; 0</div>
+      </div>
+      <div class="field">
+        <label>Margin per Trade <span class="hint">% of equity</span></label>
+        <div class="iw">
+          <input type="number" id="s_mg" value="5" min="0.01" max="100" step="0.1">
+          <span class="sx">%</span>
+        </div>
+        <div class="ferr" id="e_s_mg">Must be 0.01–100</div>
+      </div>
+      <div class="field">
+        <label>Profit per Win <span class="hint">% of position</span></label>
+        <div class="iw">
+          <input type="number" id="s_pr" value="70" min="0.01" max="10000" step="0.1">
+          <span class="sx">%</span>
+        </div>
+        <div class="ferr" id="e_s_pr">Must be &gt; 0</div>
+      </div>
+      <div class="field">
+        <label>Loss per Loss <span class="hint">% of position</span></label>
+        <div class="iw">
+          <input type="number" id="s_lo" value="100" min="0.01" max="10000" step="0.1">
+          <span class="sx">%</span>
+        </div>
+        <div class="ferr" id="e_s_lo">Must be &gt; 0</div>
+      </div>
+      <div class="sep">Schedule</div>
+      <div class="field">
+        <label>Trades per Day</label>
+        <div class="iw">
+          <input type="number" id="s_dt" value="2" min="1" max="200" step="1">
+        </div>
+        <div class="ferr" id="e_s_dt">Must be 1–200</div>
+      </div>
+      <div class="field">
+        <label>Trading Days</label>
+        <div class="iw">
+          <input type="number" id="s_dy" value="30" min="1" max="1000" step="1">
+        </div>
+        <div class="ferr" id="e_s_dy">Must be 1–1000</div>
+      </div>
+      <div class="field">
+        <label>Win Rate</label>
+        <div class="iw">
+          <input type="number" id="s_wr" value="60" min="1" max="99" step="1">
+          <span class="sx">%</span>
+        </div>
+        <div class="ferr" id="e_s_wr">Must be 1–99</div>
+      </div>
+      <div class="sep">Costs &amp; Slippage</div>
+      <div class="field">
+        <label>Taker Fee <span class="hint">per side %</span></label>
+        <div class="iw">
+          <input type="number" id="s_fee" value="0.06" min="0" max="5" step="0.01">
+          <span class="sx">%</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Slippage <span class="hint">per side %</span></label>
+        <div class="iw">
+          <input type="number" id="s_slip" value="0.05" min="0" max="5" step="0.01">
+          <span class="sx">%</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Funding Rate <span class="hint">per trade %</span></label>
+        <div class="iw">
+          <input type="number" id="s_fund" value="0.01" min="0" max="2" step="0.001">
+          <span class="sx">%</span>
+        </div>
+      </div>
+    </div>
 
-        function setMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+    <!-- ── RISK ENGINE ── -->
+    <div id="reBlock" style="display:none">
+      <div class="field">
+        <label>Starting Capital</label>
+        <div class="iw"><span class="px">$</span>
+          <input type="number" id="r_cap" value="10000" min="1" step="100">
+        </div>
+        <div class="ferr" id="e_r_cap">Must be &gt; 0</div>
+      </div>
+      <div class="field">
+        <label>Win Rate</label>
+        <div class="iw">
+          <input type="number" id="r_wr" value="60" min="1" max="99" step="1">
+          <span class="sx">%</span>
+        </div>
+        <div class="ferr" id="e_r_wr">Must be 1–99</div>
+      </div>
+      <div class="field">
+        <label>Profit per Win <span class="hint">% of position</span></label>
+        <div class="iw">
+          <input type="number" id="r_pr" value="70" min="0.01" max="10000" step="0.1">
+          <span class="sx">%</span>
+        </div>
+        <div class="ferr" id="e_r_pr">Must be &gt; 0</div>
+      </div>
+      <div class="field">
+        <label>Loss per Loss <span class="hint">% of position</span></label>
+        <div class="iw">
+          <input type="number" id="r_lo" value="100" min="0.01" max="10000" step="0.1">
+          <span class="sx">%</span>
+        </div>
+        <div class="ferr" id="e_r_lo">Must be &gt; 0</div>
+      </div>
+      <div class="sep">Schedule</div>
+      <div class="field">
+        <label>Trades per Day</label>
+        <div class="iw">
+          <input type="number" id="r_dt" value="2" min="1" max="200" step="1">
+        </div>
+        <div class="ferr" id="e_r_dt">Must be 1–200</div>
+      </div>
+      <div class="field">
+        <label>Trading Days</label>
+        <div class="iw">
+          <input type="number" id="r_dy" value="30" min="1" max="1000" step="1">
+        </div>
+        <div class="ferr" id="e_r_dy">Must be 1–1000</div>
+      </div>
+      <div class="sep">Costs &amp; Slippage</div>
+      <div class="field">
+        <label>Taker Fee <span class="hint">per side %</span></label>
+        <div class="iw">
+          <input type="number" id="r_fee" value="0.06" min="0" max="5" step="0.01">
+          <span class="sx">%</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Slippage <span class="hint">per side %</span></label>
+        <div class="iw">
+          <input type="number" id="r_slip" value="0.05" min="0" max="5" step="0.01">
+          <span class="sx">%</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Funding Rate <span class="hint">per trade %</span></label>
+        <div class="iw">
+          <input type="number" id="r_fund" value="0.01" min="0" max="2" step="0.001">
+          <span class="sx">%</span>
+        </div>
+      </div>
+      <div class="sep">Safety Thresholds</div>
+      <div class="field">
+        <label>Max Drawdown Limit <span class="hint">streak survival test</span></label>
+        <div class="iw">
+          <input type="number" id="r_mdd" value="30" min="5" max="95" step="1">
+          <span class="sx">%</span>
+        </div>
+        <div class="ferr" id="e_r_mdd">Must be 5–95</div>
+      </div>
+      <div class="field">
+        <label>Consecutive Losses <span class="hint">must survive this streak</span></label>
+        <div class="iw">
+          <input type="number" id="r_cs" value="8" min="2" max="30" step="1">
+        </div>
+        <div class="ferr" id="e_r_cs">Must be 2–30</div>
+      </div>
+    </div>
 
-            if (mode === 'findMargin') {
-                document.getElementById('standardInputs').style.display = 'none';
-                document.getElementById('findMarginInputs').style.display = 'block';
-                document.getElementById('marginPercent').value = 5; // Default for finding best margin
-            } else {
-                document.getElementById('standardInputs').style.display = 'block';
-                document.getElementById('findMarginInputs').style.display = 'none';
-            }
-        }
+    <button class="run-btn" id="runBtn" onclick="go()">▶  Run Simulation</button>
+  </div>
 
-        function calculateTradeProfit(currentCapital, marginPercent, profitPercent, lossPercent, isWin) {
-            const positionSize = currentCapital * (marginPercent / 100);
-            if (isWin) {
-                return positionSize * (profitPercent / 100);
-            } else {
-                return -positionSize * (lossPercent / 100);
-            }
-        }
+  <!-- ════ RIGHT TOP — RESULTS ════ -->
+  <div class="col-right-top panel">
+    <div class="panel-title" id="resTitle">Simulation Results</div>
+    <div id="results">
+      <div class="ph"><div class="ico">◈</div>Configure parameters and click Run</div>
+    </div>
+  </div>
 
-        function simulateBestCase(params) {
-            let capital = params.totalCapital;
-            const totalTrades = params.dailyTradeAmount * params.tradingDays;
-            const capitalHistory = [capital];
+  <!-- ════ RIGHT BOT — CHARTS ════ -->
+  <div class="col-right-bot panel">
+    <div class="panel-title" id="chartTitle">Capital Growth Curve</div>
+    <div class="chart-legend" id="chartLegend"></div>
+    <div class="chart-wrap">
+      <canvas id="mainCanvas"></canvas>
+    </div>
+    <div id="sweepSection" style="display:none" class="sweep-section">
+      <div class="sweep-title">Margin Sweep — Final Capital per Risk % (0.1 → 49.99%)</div>
+      <div class="sweep-legend">
+        <div class="li"><span style="background:rgba(16,185,129,0.85)"></span>Safe</div>
+        <div class="li"><span style="background:rgba(249,115,22,0.85)"></span>Aggressive</div>
+        <div class="li"><span style="background:rgba(239,68,68,0.7)"></span>Dangerous</div>
+        <div class="li"><span style="background:#3b82f6"></span>Optimal</div>
+      </div>
+      <div class="sweep-wrap">
+        <canvas id="sweepCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
 
-            for (let i = 0; i < totalTrades; i++) {
-                const profit = calculateTradeProfit(capital, params.marginPercent, params.avgProfitPercent, params.avgLossPercent, true);
-                capital += profit;
-                capitalHistory.push(capital);
-            }
+<div class="foot" id="foot"></div>
 
-            return {
-                finalCapital: capital,
-                totalReturn: capital - params.totalCapital,
-                totalReturnPercent: ((capital - params.totalCapital) / params.totalCapital) * 100,
-                totalTrades: totalTrades,
-                wins: totalTrades,
-                losses: 0,
-                marginUsed: params.marginPercent,
-                capitalHistory: capitalHistory
-            };
-        }
+<script>
+'use strict';
 
-        function simulateWorstCase(params) {
-            let capital = params.totalCapital;
-            const totalTrades = params.dailyTradeAmount * params.tradingDays;
-            const capitalHistory = [capital];
-            let actualTrades = 0;
+/* ════════════════════════════════════
+   GLOBALS
+════════════════════════════════════ */
+let MODE      = 'standard';
+let mainChart = null;
+let swpChart  = null;
+const FLOOR   = 0.01;
 
-            for (let i = 0; i < totalTrades; i++) {
-                const loss = calculateTradeProfit(capital, params.marginPercent, params.avgProfitPercent, params.avgLossPercent, false);
-                capital += loss;
-                capitalHistory.push(capital);
-                actualTrades++;
+/* ════════════════════════════════════
+   UTILS
+════════════════════════════════════ */
+const N   = (v,fb=0) => { const n=parseFloat(v); return (isFinite(n)&&!isNaN(n))?n:fb; };
+const I   = (v,fb=1) => { const n=parseInt(v,10); return (isFinite(n)&&n>0)?n:fb; };
+const clp = (v,a,b) => Math.max(a,Math.min(b,v));
+const $   = id => document.getElementById(id);
 
-                if (capital <= 0) {
-                    capital = 0;
-                    break;
-                }
-            }
+function f$(n) {
+  if (!isFinite(n)) return '$—';
+  return '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fp(n,d=2) { return !isFinite(n)?'—':n.toFixed(d)+'%'; }
+function vc(v) { return v>0?'pos':v<0?'neg':'neu'; }
 
-            return {
-                finalCapital: capital,
-                totalReturn: capital - params.totalCapital,
-                totalReturnPercent: ((capital - params.totalCapital) / params.totalCapital) * 100,
-                totalTrades: actualTrades,
-                wins: 0,
-                losses: actualTrades,
-                marginUsed: params.marginPercent,
-                capitalHistory: capitalHistory
-            };
-        }
+/* ════════════════════════════════════
+   VALIDATION
+════════════════════════════════════ */
+const VR = {
+  s_cap:{min:1,max:1e12}, s_mg:{min:0.01,max:100},
+  s_pr:{min:0.01,max:10000}, s_lo:{min:0.01,max:10000},
+  s_dt:{min:1,max:200}, s_dy:{min:1,max:1000}, s_wr:{min:1,max:99},
+  r_cap:{min:1,max:1e12}, r_wr:{min:1,max:99},
+  r_pr:{min:0.01,max:10000}, r_lo:{min:0.01,max:10000},
+  r_dt:{min:1,max:200}, r_dy:{min:1,max:1000},
+  r_mdd:{min:5,max:95}, r_cs:{min:2,max:30},
+};
 
-        function simulateAverageCase(params) {
-            let capital = params.totalCapital;
-            const totalTrades = params.dailyTradeAmount * params.tradingDays;
-            const capitalHistory = [capital];
-            let wins = 0, losses = 0;
+function vf(id) {
+  const el=$('e_'+id), inp=$(id);
+  if (!inp||!VR[id]) return true;
+  const v=parseFloat(inp.value), ok=isFinite(v)&&v>=VR[id].min&&v<=VR[id].max;
+  inp.classList.toggle('bad',!ok);
+  if (el) el.classList.toggle('on',!ok);
+  return ok;
+}
 
-            for (let i = 0; i < totalTrades; i++) {
-                const isWin = (Math.random() < params.winRate);
-                const profitOrLoss = calculateTradeProfit(capital, params.marginPercent, params.avgProfitPercent, params.avgLossPercent, isWin);
-                capital += profitOrLoss;
-                capitalHistory.push(capital);
+/* ════════════════════════════════════
+   MODE SWITCH
+════════════════════════════════════ */
+function setMode(m, btn) {
+  MODE = m;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const re = m==='riskEngine';
+  $('stdBlock').style.display  = re?'none':'block';
+  $('reBlock').style.display   = re?'block':'none';
+  $('inputTitle').textContent  = re?'Risk Engine Parameters':'Parameters';
+  $('resTitle').textContent    = re?'Risk Engine Analysis':'Simulation Results';
+  $('chartTitle').textContent  = re?'Equity Curve & Margin Sweep':'Capital Growth Curve';
+  $('runBtn').textContent      = re?'▶  Run Risk Engine':'▶  Run Simulation';
+  resetOutputs();
+}
 
-                if (isWin) wins++;
-                else losses++;
+function resetOutputs() {
+  $('results').innerHTML = '<div class="ph"><div class="ico">◈</div>Configure parameters and click Run</div>';
+  $('chartLegend').innerHTML = '';
+  $('sweepSection').style.display = 'none';
+  $('foot').textContent = '';
+  if (mainChart) { mainChart.destroy(); mainChart=null; }
+  if (swpChart)  { swpChart.destroy();  swpChart=null;  }
+}
 
-                if (capital <= 0) {
-                    capital = 0;
-                    break;
-                }
-            }
+/* ════════════════════════════════════
+   STANDARD — Monte Carlo simulation
+   Every trade: position = equity × margin%
+   Win delta  = position × profit% − position × cost%
+   Loss delta = −(position × loss% + position × cost%)
+   Capital floor = $0.01 (never goes negative)
+════════════════════════════════════ */
+function readStd() {
+  const ids = ['s_cap','s_mg','s_pr','s_lo','s_dt','s_dy','s_wr'];
+  if (!ids.every(vf)) return null;
+  const fee=N($('s_fee').value,0), slip=N($('s_slip').value,0), fund=N($('s_fund').value,0);
+  return {
+    cap : N($('s_cap').value),
+    mg  : N($('s_mg').value),
+    pr  : N($('s_pr').value),
+    lo  : N($('s_lo').value),
+    dt  : I($('s_dt').value),
+    dy  : I($('s_dy').value),
+    wr  : clp(N($('s_wr').value),1,99)/100,
+    cost: (fee+slip)*2+fund, fee, slip, fund,
+  };
+}
 
-            return {
-                finalCapital: capital,
-                totalReturn: capital - params.totalCapital,
-                totalReturnPercent: ((capital - params.totalCapital) / params.totalCapital) * 100,
-                totalTrades: wins + losses,
-                wins: wins,
-                losses: losses,
-                marginUsed: params.marginPercent,
-                capitalHistory: capitalHistory
-            };
-        }
+function sim(p, winFn) {
+  let cap = Math.max(p.cap, FLOOR);
+  const T = p.dt * p.dy;
+  const hist=[cap]; let W=0,L=0,gW=0,gL=0,peak=cap,dd=0;
+  for (let i=0; i<T; i++) {
+    const win = winFn(i);
+    const pos = cap*(p.mg/100);
+    const gr  = win ? pos*(p.pr/100) : pos*(p.lo/100);
+    const cost= pos*(p.cost/100);
+    cap = Math.max(cap + (win ? gr-cost : -(gr+cost)), FLOOR);
+    win ? (W++, gW+=gr) : (L++, gL+=gr);
+    if (cap>peak) peak=cap;
+    const d=(peak-cap)/peak*100; if(d>dd) dd=d;
+    hist.push(cap);
+    if (cap<=FLOOR+0.001) break;
+  }
+  const net=cap-p.cap, pct=net/p.cap*100;
+  const pf = gL>0?gW/gL:gW>0?Infinity:0;
+  return {cap,net,pct,W,L,gW,gL,pf,dd,hist};
+}
 
-        function findBestMargin(params) {
-            const marginResults = [];
-            
-            for (let margin = 1; margin <= 50; margin += 1) {
-                const testParams = { ...params, marginPercent: margin };
-                const bestCase = simulateBestCase(testParams);
-                const avgCase = simulateAverageCase(testParams);
-                const worstCase = simulateWorstCase(testParams);
-                
-                marginResults.push({
-                    margin: margin,
-                    bestCase: bestCase,
-                    avgCase: avgCase,
-                    worstCase: worstCase
-                });
-            }
+function pfStr(r) {
+  if (!isFinite(r.pf)||r.pf===Infinity) return r.W>0?'∞':'—';
+  return r.pf.toFixed(3);
+}
 
-            const bestAvg = marginResults.reduce((best, current) => 
-                current.avgCase.finalCapital > best.avgCase.finalCapital ? current : best
-            );
+function cardHtml(cls,label,r) {
+  const tot=r.W+r.L, wrS=tot>0?(r.W/tot*100).toFixed(1)+'%':'—';
+  return `<div class="scard ${cls}">
+    <div class="scard-head">
+      <div class="scard-title">${label}</div>
+      <div class="scard-val ${vc(r.net)}">${f$(r.cap)}</div>
+    </div>
+    <div class="sg">
+      <div class="st"><div class="stl">Net Return</div><div class="stv ${vc(r.pct)}">${fp(r.pct)}</div></div>
+      <div class="st"><div class="stl">Total Trades</div><div class="stv">${tot}</div></div>
+      <div class="st"><div class="stl">Win Rate</div><div class="stv">${wrS}</div></div>
+      <div class="st"><div class="stl">Wins / Losses</div><div class="stv">${r.W}/${r.L}</div></div>
+      <div class="st"><div class="stl">Max Drawdown</div><div class="stv ${r.dd>30?'neg':''}">${r.dd.toFixed(1)}%</div></div>
+      <div class="st"><div class="stl">Profit Factor</div><div class="stv">${pfStr(r)}</div></div>
+    </div>
+  </div>`;
+}
 
-            return { marginResults, bestMargin: bestAvg.margin };
-        }
+function stdChart(best,avg,worst) {
+  const ctx=$('mainCanvas').getContext('2d');
+  if (mainChart){mainChart.destroy();mainChart=null;}
+  const mx=Math.max(best.hist.length,avg.hist.length,worst.hist.length);
+  const st=Math.max(1,Math.ceil(mx/70));
+  const sp=a=>{const o=[];for(let i=0;i<a.length;i+=st)o.push(a[i]);if(o[o.length-1]!==a[a.length-1])o.push(a[a.length-1]);return o;};
+  const labs=sp(best.hist).map((_,i)=>`T${i*st}`);
+  mainChart=new Chart(ctx,{type:'line',data:{labels:labs,datasets:[
+    {label:'Best (100% WR)',  data:sp(best.hist),  borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.06)',  borderWidth:2,pointRadius:0,tension:0.35},
+    {label:`Avg (${Math.round(avg.W/(avg.W+avg.L||1)*100)}% WR)`,data:sp(avg.hist),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.06)',borderWidth:2,pointRadius:0,tension:0.35},
+    {label:'Worst (0% WR)',   data:sp(worst.hist), borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.06)',   borderWidth:2,pointRadius:0,tension:0.35},
+  ]},options:cOpts()});
+  $('chartLegend').innerHTML=`
+    <div class="ldot"><span style="background:#f59e0b"></span>Best (100% WR)</div>
+    <div class="ldot"><span style="background:#10b981"></span>Average (Monte Carlo)</div>
+    <div class="ldot"><span style="background:#ef4444"></span>Worst (0% WR)</div>`;
+}
 
-        function displayResults(bestCase, avgCase, worstCase, bestMargin = null) {
-            const resultsDiv = document.getElementById('results');
-            
-            let html = `
-                <div class="scenario-card best-case">
-                    <div class="scenario-title">🚀 BEST CASE (100% Win Rate)</div>
-                    <div class="scenario-stats">
-                        <div class="stat">
-                            <div class="stat-label">Final Capital</div>
-                            <div class="stat-value">$${bestCase.finalCapital.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-label">Total Return</div>
-                            <div class="stat-value">${bestCase.totalReturnPercent.toFixed(2)}%</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-label">Total Trades</div>
-                            <div class="stat-value">${bestCase.totalTrades}</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-label">Win/Loss</div>
-                            <div class="stat-value">${bestCase.wins}/${bestCase.losses}</div>
-                        </div>
-                    </div>
-                </div>
+function runStd(p) {
+  const best=sim(p,()=>true), avg=sim(p,()=>Math.random()<p.wr), worst=sim(p,()=>false);
+  const T=p.dt*p.dy;
+  const ev=(p.wr*p.pr-(1-p.wr)*p.lo-p.cost).toFixed(4);
+  const evC=+ev>=0?'var(--green)':'var(--red)';
+  const sPos=p.cap*(p.mg/100);
+  const drag=((sPos*(p.fee+p.slip)*2/100)+(sPos*p.fund/100))*T;
 
-                <div class="scenario-card avg-case">
-                    <div class="scenario-title">📊 AVERAGE CASE (${params.winRate * 100}% Win Rate)</div>
-                    <div class="scenario-stats">
-                        <div class="stat">
-                            <div class="stat-label">Final Capital</div>
-                            <div class="stat-value">$${avgCase.finalCapital.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-label">Total Return</div>
-                            <div class="stat-value">${avgCase.totalReturnPercent.toFixed(2)}%</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-label">Total Trades</div>
-                            <div class="stat-value">${avgCase.totalTrades}</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-label">Win/Loss</div>
-                            <div class="stat-value">${avgCase.wins}/${avgCase.losses}</div>
-                        </div>
-                    </div>
-                </div>
+  $('results').innerHTML=`
+    <div class="scards">
+      ${cardHtml('best','🚀 Best — 100% Win Rate',best)}
+      ${cardHtml('avg',`📊 Average — ${(p.wr*100).toFixed(0)}% WR (Monte Carlo)`,avg)}
+      ${cardHtml('worst','💥 Worst — 0% Win Rate',worst)}
+    </div>
+    <div style="margin-top:14px">
+      <div class="sep" style="margin:0 0 10px">Cost Breakdown</div>
+      <div class="crow"><span>Fee per side</span><span>${p.fee}%</span></div>
+      <div class="crow"><span>Slippage per side</span><span>${p.slip}%</span></div>
+      <div class="crow"><span>Funding per trade</span><span>${p.fund}%</span></div>
+      <div class="crow"><span>Round-trip cost</span><span>${p.cost.toFixed(3)}%</span></div>
+      <div class="crow"><span>Total cost drag (${T} trades)</span><span>${f$(drag)}</span></div>
+    </div>
+    <div class="box blue" style="margin-top:12px">
+      📐 EV/trade: <strong style="color:${evC}">${+ev>=0?'+':''}${ev}%</strong>
+      &nbsp;|&nbsp; Trades: <strong>${T}</strong>
+      &nbsp;|&nbsp; Margin: <strong>${p.mg}%</strong>
+    </div>`;
+  stdChart(best,avg,worst);
+  $('foot').textContent='Average case is Monte Carlo — re-run for variance sampling.';
+}
 
-                <div class="scenario-card worst-case">
-                    <div class="scenario-title">💥 WORST CASE (0% Win Rate)</div>
-                    <div class="scenario-stats">
-                        <div class="stat">
-                            <div class="stat-label">Final Capital</div>
-                            <div class="stat-value">$${worstCase.finalCapital.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-label">Total Return</div>
-                            <div class="stat-value">${worstCase.totalReturnPercent.toFixed(2)}%</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-label">Total Trades</div>
-                            <div class="stat-value">${worstCase.totalTrades}</div>
-                        </div>
-                        <div class="stat">
-               <div class="stat-label">Survival</div>
-                            <div class="stat-value">${worstCase.totalTrades}/${worstCase.totalTrades}</div>
-                        </div>
-                    </div>
-                </div>
-            `;
+/* ════════════════════════════════════
+   RISK ENGINE
+   ─────────────────────────────────────
+   SWEEP: m = 0.1 → 49.99 (step 0.1, 499 pts)
 
-            if (bestMargin) {
-                html += `
-                    <div style="background: #e8f5e8; padding: 15px; border-radius: 10px; margin-top: 15px; border-left: 4px solid #27ae60;">
-                        <strong>💡 Recommendation:</strong> Optimal margin for your ${params.winRate * 100}% win rate is <strong>${bestMargin}%</strong>
-                    </div>
-                `;
-            }
+   For each margin m:
 
-            resultsDiv.innerHTML = html;
-        }
+   ① Expected Value per trade (net % of position):
+      EV = WR×profit − (1−WR)×loss − costPct
 
-        function createChart(bestCase, avgCase, worstCase) {
-            const ctx = document.getElementById('growthChart').getContext('2d');
-            
-            if (chart) {
-                chart.destroy();
-            }
+   ② Deterministic equity curve:
+      evFrac = (m/100) × (EV/100)        ← fraction of capital gained/lost per trade
+      cap[t] = cap[t-1] × (1 + evFrac)
+      (deterministic → same result every run, no RNG)
 
-            const labels = bestCase.capitalHistory.map((_, index) => `Day ${Math.floor(index / params.dailyTradeAmount) + 1}`);
+   ③ Streak Drawdown (worst consecutive-loss scenario):
+      Each loss trade: cap × (1 − (m/100)×(loss+cost)/100)
+      streakDD = (1 − lossMult^consec) × 100
 
-            chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels.filter((_, index) => index % Math.ceil(labels.length / 30) === 0),datasets: [
-                        {
-                            label: 'Best Case',
-                            data: bestCase.capitalHistory.filter((_, index) => index % Math.ceil(bestCase.capitalHistory.length / 30) === 0),
-                            borderColor: '#f1c40f',
-                            backgroundColor: 'rgba(241, 196, 15, 0.1)',
-                            borderWidth: 3,
-                            tension: 0.4,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#f1c40f'
-                        },
-                        {
-                            label: 'Average Case',
-                            data: avgCase.capitalHistory.filter((_, index) => index % Math.ceil(avgCase.capitalHistory.length / 30) === 0),
-                            borderColor: '#27ae60',
-                            backgroundColor: 'rgba(39, 174, 96, 0.1)',
-                            borderWidth: 3,
-                            tension: 0.4,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#27ae60'
-                        },
-                        {
-                            label: 'Worst Case',
-                            data: worstCase.capitalHistory.filter((_, index) => index % Math.ceil(worstCase.capitalHistory.length / 30) === 0),
-                            borderColor: '#e74c3c',
-                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                            borderWidth: 3,
-                            tension: 0.4,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#e74c3c'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            ticks: {
-                                callback: function(value) {
-                                    return '$' + value.toLocaleString();
-                                }
-                            },
-                            grid: {
-                                color: 'rgba(0,0,0,0.1)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                            color: 'rgba(0,0,0,0.1)'
-                            }
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    }
-                }
-            });
-        }
+   ④ Risk of Ruin (diffusion approximation):
+      netWin  = (m/100) × (profit−cost)/100
+      netLoss = (m/100) × (loss+cost)/100
+      μ = WR×netWin − (1−WR)×netLoss        ← per-trade drift fraction
+      σ² = WR×(1−WR)×(netWin+netLoss)²      ← per-trade variance
+      RoR = exp(−2μ/σ²)   capped 0–1
+      (If μ≤0 → RoR=1, ruin is certain)
 
-        let params = {};
+   ⑤ Classification:
+      Safe:       streakDD < maxDD  AND  RoR < 0.05
+      Aggressive: streakDD < maxDD  AND  0.05 ≤ RoR < 0.25
+      Dangerous:  otherwise
 
-        function calculate() {
-            // Get input values
-            if (currentMode === 'findMargin') {
-                params = {
-                    totalCapital: parseFloat(document.getElementById('findMarginCapital').value),
-                    marginPercent: 5, // Starting point
-                    avgProfitPercent: 70,
-                    avgLossPercent: 100,
-                    dailyTradeAmount: parseInt(document.getElementById('dailyTrades').value),
-                    tradingDays: parseInt(document.getElementById('tradingDays').value),
-                    winRate: parseFloat(document.getElementById('findMarginWinRate').value) / 100
-                };
+   ⑥ Score (for picking optimal):
+      score = finalCapital
+         × (streakDD ≥ maxDD  ? 0.001 : 1)
+         × (RoR ≥ 0.50        ? 0.1   : 1)
+         × (RoR ≥ 0.25        ? 0.5   : 1)
+      Optimal = argmax(score) over all 499 steps.
+════════════════════════════════════ */
+function readRE() {
+  const ids=['r_cap','r_wr','r_pr','r_lo','r_dt','r_dy','r_mdd','r_cs'];
+  if (!ids.every(vf)) return null;
+  const fee=N($('r_fee').value,0),slip=N($('r_slip').value,0),fund=N($('r_fund').value,0);
+  return {
+    cap : N($('r_cap').value),
+    wr  : clp(N($('r_wr').value),1,99)/100,
+    pr  : N($('r_pr').value),
+    lo  : N($('r_lo').value),
+    dt  : I($('r_dt').value),
+    dy  : I($('r_dy').value),
+    mdd : N($('r_mdd').value),
+    cs  : I($('r_cs').value),
+    cost: (fee+slip)*2+fund, fee, slip, fund,
+  };
+}
 
-                const { marginResults, bestMargin } = findBestMargin(params);
-                
-                // Use the best margin for final calculation
-                params.marginPercent = bestMargin;
-                const bestCase = simulateBestCase(params);
-                const avgCase = simulateAverageCase(params);
-                const worstCase = simulateWorstCase(params);
+function riskEngine(p) {
+  const {cap,wr,pr,lo,cost,dt,dy,mdd,cs} = p;
+  const lr = 1-wr;
+  const T  = dt*dy;
+  // EV as % of position (net of all costs)
+  const EV = wr*pr - lr*lo - cost;
 
-                displayResults(bestCase, avgCase, worstCase, bestMargin);
-                createChart(bestCase, avgCase, worstCase);
-            } else {
-                params = {
-                    totalCapital: 
-                    parseFloat(document.getElementById('totalCapital').value),
-                    marginPercent: parseFloat(document.getElementById('marginPercent').value),
-                    avgProfitPercent: parseFloat(document.getElementById('profitPercent').value),
-                    avgLossPercent: parseFloat(document.getElementById('lossPercent').value),
-                    dailyTradeAmount: parseInt(document.getElementById('dailyTrades').value),
-                    tradingDays: parseInt(document.getElementById('tradingDays').value),
-                    winRate: parseFloat(document.getElementById('winRate').value) / 100
-                };
+  const sweep=[];
 
-                const bestCase = simulateBestCase(params);
-                const avgCase = simulateAverageCase(params);
-                const worstCase = simulateWorstCase(params);
+  for (let m=0.1; m<=49.99; m=parseFloat((m+0.1).toFixed(2))) {
 
-                displayResults(bestCase, avgCase, worstCase);
-                createChart(bestCase, avgCase, worstCase);
-            }
-        }
+    /* ① Deterministic equity curve */
+    const evF = (m/100)*(EV/100); // fraction of capital per trade
+    let c=cap, pk=cap, ddMax=0;
+    const hist=[c];
+    for (let i=0;i<T;i++) {
+      c = Math.max(c*(1+evF), FLOOR);
+      if (c>pk) pk=c;
+      const d=(pk-c)/pk*100; if(d>ddMax) ddMax=d;
+      hist.push(c);
+      if (c<=FLOOR+0.001) break;
+    }
 
-        // Auto-calculate on page load
-        window.addEventListener('load', function() {
-            calculate();
-        });
-    </script>
+    /* ② Streak drawdown */
+    const lm  = Math.max(0, 1-(m/100)*((lo+cost)/100));
+    const sDD = (1-Math.pow(lm,cs))*100;
+
+    /* ③ Risk of Ruin */
+    const nW = (m/100)*Math.max(0,(pr-cost)/100);
+    const nL = (m/100)*((lo+cost)/100);
+    const mu = wr*nW - lr*nL;
+    let ror;
+    if (mu<=0||nW<=0) {
+      ror=1;
+    } else {
+      const v2 = wr*lr*Math.pow(nW+nL,2);
+      ror = v2>0 ? clp(Math.exp(-2*mu/v2),0,1) : 0;
+    }
+
+    /* ④ Classification */
+    const ddOk  = sDD  < mdd;
+    const safe  = ddOk && ror<0.05;
+    const aggr  = ddOk && ror>=0.05 && ror<0.25;
+
+    /* ⑤ Score */
+    let score = c;
+    if (!ddOk)    score*=0.001;
+    if (ror>=0.25) score*=0.5;
+    if (ror>=0.50) score*=0.1;
+
+    sweep.push({m, cap:c, sDD, ror, safe, aggr, score, hist});
+  }
+
+  const opt   = sweep.reduce((a,b)=>b.score>a.score?b:a);
+  const safeM = sweep.filter(r=>r.safe).map(r=>r.m);
+  const aggrM = sweep.filter(r=>r.aggr).map(r=>r.m);
+
+  return {
+    EV, T, opt,
+    safeMin: safeM.length?Math.min(...safeM):null,
+    safeMax: safeM.length?Math.max(...safeM):null,
+    aggrMin: aggrM.length?Math.min(...aggrM):null,
+    aggrMax: aggrM.length?Math.max(...aggrM):null,
+    sweep,
+  };
+}
+
+function reChart(re) {
+  /* — Main: deterministic equity curve at optimal margin — */
+  const ctx=$('mainCanvas').getContext('2d');
+  if (mainChart){mainChart.destroy();mainChart=null;}
+  const h=re.opt.hist;
+  const st=Math.max(1,Math.ceil(h.length/80));
+  const sp=a=>{const o=[];for(let i=0;i<a.length;i+=st)o.push(a[i]);if(o[o.length-1]!==a[a.length-1])o.push(a[a.length-1]);return o;};
+  mainChart=new Chart(ctx,{type:'line',data:{labels:sp(h).map((_,i)=>`T${i*st}`),datasets:[{
+    label:`Equity Curve — ${re.opt.m.toFixed(2)}% margin (deterministic)`,
+    data:sp(h), borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.07)',
+    borderWidth:2.5, pointRadius:0, tension:0.4,
+  }]},options:cOpts()});
+  $('chartLegend').innerHTML=`<div class="ldot"><span style="background:#3b82f6"></span>Deterministic Equity Curve @ ${re.opt.m.toFixed(2)}% margin</div>`;
+
+  /* — Sweep bar chart — */
+  $('sweepSection').style.display='block';
+  const sc=$('sweepCanvas').getContext('2d');
+  if (swpChart){swpChart.destroy();swpChart=null;}
+  const sw=re.sweep.filter((_,i)=>i%5===0); // every 0.5%
+  swpChart=new Chart(sc,{type:'bar',data:{
+    labels:sw.map(r=>r.m.toFixed(1)+'%'),
+    datasets:[{
+      label:'Final Capital',
+      data:sw.map(r=>r.cap),
+      backgroundColor:sw.map(r=>{
+        if(Math.abs(r.m-re.opt.m)<0.3) return '#3b82f6';
+        if(r.safe) return 'rgba(16,185,129,0.82)';
+        if(r.aggr) return 'rgba(249,115,22,0.82)';
+        return 'rgba(239,68,68,0.65)';
+      }),
+      borderRadius:2, borderWidth:0,
+    }]
+  },options:{
+    responsive:true, maintainAspectRatio:false, animation:{duration:350},
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:'#161c28',borderColor:'#1f2a3c',borderWidth:1,
+      titleColor:'#94a3b8',bodyColor:'#e2e8f0',
+      callbacks:{title:i=>`Margin: ${i[0].label}`,label:c=>` Final: ${f$(c.parsed.y)}`}
+    }},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#4b5a72',font:{family:'Space Mono',size:9},maxTicksLimit:20}},
+      y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#4b5a72',font:{family:'Space Mono',size:9},
+          callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v.toFixed(0)}}
+    }
+  }});
+}
+
+function runRE(p) {
+  const re = riskEngine(p);
+  const o  = re.opt;
+  const EV = re.EV;
+  const evC = EV>=0?'var(--green)':'var(--red)';
+  const evS = EV>=0?'+':'';
+  const ret = (o.cap-p.cap)/p.cap*100;
+
+  // verdict
+  let vCls,vLbl;
+  if      (o.safe) { vCls='safe'; vLbl='✅ Safe'; }
+  else if (o.aggr) { vCls='aggr'; vLbl='⚠️ Aggressive'; }
+  else             { vCls='dngr'; vLbl='🔴 Dangerous'; }
+
+  const rorC = o.ror<0.05?'var(--green)':o.ror<0.25?'var(--orange)':'var(--red)';
+  const ddC  = o.sDD<p.mdd?'var(--green)':'var(--red)';
+
+  const safeR = re.safeMin!==null
+    ? `<span style="color:var(--green)">${re.safeMin.toFixed(1)}% – ${re.safeMax.toFixed(1)}%</span>`
+    : `<span style="color:var(--red)">None — tighten thresholds or fix strategy edge</span>`;
+  const aggrR = re.aggrMin!==null
+    ? `<span style="color:var(--orange)">${re.aggrMin.toFixed(1)}% – ${re.aggrMax.toFixed(1)}%</span>`
+    : `<span style="color:var(--muted)">—</span>`;
+
+  const negWarn = EV<0 ? `<div class="box red">
+    ⚠️ <strong>Negative edge (EV = ${evS}${EV.toFixed(4)}%).</strong>
+    No margin can produce net profit with this strategy. Improve win rate or reward:risk ratio first.
+  </div>` : '';
+
+  // RoR interpretation
+  const rorNote = o.ror<0.05
+    ? `<em style="color:var(--green)"> — well within safe zone (&lt;5%)</em>`
+    : o.ror<0.25
+    ? `<em style="color:var(--orange)"> — elevated; reduce margin or tighten stops</em>`
+    : `<em style="color:var(--red)"> — critical; account ruin probable at this margin</em>`;
+
+  $('results').innerHTML=`
+    ${negWarn}
+    <div class="re-hero">
+      <div class="re-top">
+        <div>
+          <div class="re-label">Optimal Margin</div>
+          <div class="re-big">${o.m.toFixed(2)}<sup>%</sup></div>
+          <div class="re-sub">per trade · of total equity</div>
+        </div>
+        <div style="text-align:right">
+          <div class="re-label">Projected Capital</div>
+          <div class="re-cap">${f$(o.cap)}</div>
+          <div class="re-sub" style="margin-top:3px">${ret>=0?'+':''}${ret.toFixed(2)}% from ${f$(p.cap)}</div>
+          <span class="re-badge ${vCls}">${vLbl}</span>
+        </div>
+      </div>
+      <div class="re-6">
+        <div class="st"><div class="stl">EV / Trade</div><div class="stv" style="color:${evC}">${evS}${EV.toFixed(4)}%</div></div>
+        <div class="st"><div class="stl">Total Trades</div><div class="stv">${re.T}</div></div>
+        <div class="st"><div class="stl">Streak DD (${p.cs} losses)</div><div class="stv" style="color:${ddC}">${o.sDD.toFixed(2)}%</div></div>
+        <div class="st"><div class="stl">Risk of Ruin</div><div class="stv" style="color:${rorC}">${(o.ror*100).toFixed(2)}%</div></div>
+        <div class="st"><div class="stl">DD Limit</div><div class="stv">${p.mdd}%</div></div>
+        <div class="st"><div class="stl">Sweep Points</div><div class="stv">499</div></div>
+      </div>
+    </div>
+
+    <div class="re-ranges">
+      <div class="re-ranges-title">Margin Range Analysis (full 0.1–49.99% sweep)</div>
+      <div class="crow"><span>🟢 Safe Range <em style="font-size:0.7rem;color:var(--muted)">(RoR&lt;5%, streak survives)</em></span><span>${safeR}</span></div>
+      <div class="crow"><span>🟡 Aggressive Range <em style="font-size:0.7rem;color:var(--muted)">(5%≤RoR&lt;25%)</em></span><span>${aggrR}</span></div>
+      <div class="crow"><span>📍 Recommended (Optimal)</span><span style="color:var(--accent);font-family:var(--mono)">${o.m.toFixed(2)}%</span></div>
+      <div class="crow"><span>Consecutive loss survival</span><span>${p.cs} losses in a row at ${o.m.toFixed(2)}% → DD = ${o.sDD.toFixed(2)}%</span></div>
+    </div>
+
+    <div class="box blue">
+      📐 <strong>EV formula:</strong>
+      (${(p.wr*100).toFixed(0)}%×${p.pr}%) − (${((1-p.wr)*100).toFixed(0)}%×${p.lo}%) − ${p.cost.toFixed(3)}% cost
+      = <strong style="color:${evC}">${evS}${EV.toFixed(4)}% per trade</strong>
+    </div>
+
+    <div class="box ${o.ror<0.05?'green':o.ror<0.25?'orange':'red'}">
+      📉 <strong>Risk of Ruin</strong> at ${o.m.toFixed(2)}% margin:
+      RoR = exp(−2μ/σ²) = <strong style="color:${rorC}">${(o.ror*100).toFixed(2)}%</strong>${rorNote}
+    </div>`;
+
+  reChart(re);
+  $('foot').textContent=`499 margin steps tested (0.1→49.99%). Equity curve is deterministic (EV-compounded). RoR = exp(−2μ/σ²) diffusion model.`;
+}
+
+/* ════════════════════════════════════
+   SHARED CHART OPTIONS
+════════════════════════════════════ */
+function cOpts() {
+  return {
+    responsive:true, maintainAspectRatio:false, animation:{duration:520},
+    plugins:{
+      legend:{display:true,labels:{color:'#94a3b8',font:{family:'Space Mono',size:10},boxWidth:10}},
+      tooltip:{backgroundColor:'#161c28',borderColor:'#1f2a3c',borderWidth:1,
+        titleColor:'#94a3b8',bodyColor:'#e2e8f0',
+        callbacks:{label:c=>` ${c.dataset.label}: ${f$(c.parsed.y)}`}}
+    },
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#4b5a72',maxTicksLimit:10,font:{family:'Space Mono',size:10}}},
+      y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#4b5a72',font:{family:'Space Mono',size:10},
+          callback:v=>'$'+(v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v.toFixed(0))}}
+    },
+    interaction:{mode:'index',intersect:false}
+  };
+}
+
+/* ════════════════════════════════════
+   ENTRY POINT
+════════════════════════════════════ */
+function go() {
+  const btn=$('runBtn');
+  btn.disabled=true;
+  btn.textContent='◌  Computing…';
+  setTimeout(()=>{
+    try {
+      if (MODE==='standard') {
+        const p=readStd(); if(p) runStd(p);
+      } else {
+        const p=readRE(); if(p) runRE(p);
+      }
+    } catch(e) {
+      console.error(e);
+      $('results').innerHTML=`<div class="box red">⚠️ Error: ${e.message}</div>`;
+    }
+    btn.disabled=false;
+    btn.textContent=MODE==='riskEngine'?'▶  Run Risk Engine':'▶  Run Simulation';
+  },20);
+}
+
+window.addEventListener('load',()=>{ try{go();}catch(e){} });
+</script>
 </body>
 </html>
